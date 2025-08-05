@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_URL = "https://script.google.com/macros/s/AKfycbwr2HANVmQWTcnNmQwU5kRBcm334pfCSpTHypRYUx3g68tC4_N_CUcA1X925FLwFpsu/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbxbMw9NeJYY_I0yPoBthoWSFa5dcpbJcgg7T5KA59XjzhYHv6DtanB4UqeNFBIAVMUo/exec";
   
   // DOM elements
   const searchInput = document.getElementById('searchInput');
