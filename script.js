@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Configuration
   const API_URL = "https://script.google.com/macros/s/AKfycbwr2HANVmQWTcnNmQwU5kRBcm334pfCSpTHypRYUx3g68tC4_N_CUcA1X925FLwFpsu/exec";
   
   // DOM elements
@@ -7,37 +6,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchBtn = document.getElementById('searchBtn');
   const stockResults = document.getElementById('stockResults');
   const stockForm = document.getElementById('stockForm');
-  const updateBtn = document.getElementById('updateBtn');
-  const adjustQty = document.getElementById('adjustQty');
-  const adjustType = document.getElementById('adjustType');
 
-  let currentItem = null;
+  // Debug: Verify elements exist
+  console.log('Elements:', { searchInput, searchBtn, stockResults, stockForm });
 
-  // Event listeners
-  searchBtn.addEventListener('click', searchStock);
-  updateBtn.addEventListener('click', updateStock);
-  searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') searchStock();
-  });
+  // Event listeners with error handling
+  try {
+    searchBtn.addEventListener('click', searchStock);
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchStock();
+    });
+    console.log('Event listeners added successfully');
+  } catch (e) {
+    console.error('Error adding event listeners:', e);
+  }
 
   async function searchStock() {
     const searchTerm = searchInput.value.trim();
-    stockResults.innerHTML = '<p class="loading">Searching...</p>';
+    console.log('Searching for:', searchTerm); // Debug
     
     if (!searchTerm) {
       showMessage('Please enter an item name', 'error');
       return;
     }
 
+    stockResults.innerHTML = '<p class="loading">Searching...</p>';
+    
     try {
-      const response = await fetch(`${API_URL}?action=search&term=${encodeURIComponent(searchTerm)}`);
+      // Debug: Log the exact URL being called
+      const searchUrl = `${API_URL}?action=search&term=${encodeURIComponent(searchTerm)}`;
+      console.log('Fetching:', searchUrl);
       
-      if (!response.ok) throw new Error('Network response was not ok');
+      const response = await fetch(searchUrl);
+      console.log('Response status:', response.status); // Debug
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
       const items = await response.json();
+      console.log('Received items:', items); // Debug
       
       if (!items || items.length === 0) {
-        showMessage('No items found', 'error');
+        showMessage('No items found. Check your sheet data.', 'error');
         stockForm.style.display = 'none';
         return;
       }
@@ -45,110 +56,40 @@ document.addEventListener('DOMContentLoaded', () => {
       displayResults(items);
     } catch (error) {
       console.error('Search failed:', error);
-      showMessage('Failed to search inventory. Please try again.', 'error');
-      // Fallback to dummy data if needed
-      // loadDummyData(searchTerm);
+      showMessage(`Search error: ${error.message}`, 'error');
     }
   }
 
   function displayResults(items) {
+    console.log('Displaying items:', items); // Debug
     stockResults.innerHTML = items.map(item => `
       <div class="stock-card" data-id="${item.ID}">
         <h3>${item.ItemName}</h3>
         <p>Price: KSh ${item.Price}</p>
-        <p>Stock: <span class="stock-value ${item.CurrentStock < 10 ? 'low-stock' : ''}">
-          ${item.CurrentStock}
-        </span> units</p>
-        ${item.LastUpdated ? `<p class="updated">Last updated: ${new Date(item.LastUpdated).toLocaleString()}</p>` : ''}
+        <p>Stock: ${item.CurrentStock} units</p>
       </div>
     `).join('');
 
-    // Add click handler to each result
+    // Add click handlers
     document.querySelectorAll('.stock-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const itemId = parseInt(card.dataset.id);
-        currentItem = items.find(item => item.ID === itemId);
-        stockForm.style.display = 'block';
-        adjustQty.value = 1;
-        adjustType.value = 'reduce';
+      card.addEventListener('click', function() {
+        const itemId = parseInt(this.dataset.id);
+        const selectedItem = items.find(item => item.ID === itemId);
+        console.log('Selected item:', selectedItem); // Debug
+        // Implement your selection logic here
       });
     });
-  }
-
-  async function updateStock() {
-    if (!currentItem) return;
-    
-    const quantity = parseInt(adjustQty.value);
-    const isAdd = adjustType.value === 'add';
-    const newStock = isAdd ? 
-      currentItem.CurrentStock + quantity : 
-      currentItem.CurrentStock - quantity;
-
-    if (isNaN(quantity) {
-      showMessage('Please enter a valid quantity', 'error');
-      return;
-    }
-
-    if (newStock < 0) {
-      showMessage('Stock cannot go below 0', 'error');
-      return;
-    }
-
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: currentItem.ID,
-          newStock: newStock
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Update local display
-        currentItem.CurrentStock = newStock;
-        document.querySelector(`.stock-card[data-id="${currentItem.ID}"] .stock-value`).textContent = newStock;
-        
-        // Highlight if stock is now low
-        const stockElement = document.querySelector(`.stock-card[data-id="${currentItem.ID}"] .stock-value`);
-        stockElement.classList.toggle('low-stock', newStock < 10);
-        
-        showMessage(`Successfully updated stock to ${newStock}`, 'success');
-      } else {
-        throw new Error(result.error || 'Update failed');
-      }
-    } catch (error) {
-      console.error('Update failed:', error);
-      showMessage(error.message, 'error');
-    }
   }
 
   function showMessage(msg, type) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${type}`;
     msgDiv.textContent = msg;
-    stockResults.prepend(msgDiv);
+    stockResults.appendChild(msgDiv);
     setTimeout(() => msgDiv.remove(), 5000);
   }
 
-  // Fallback dummy data (for testing when API fails)
-  function loadDummyData(searchTerm) {
-    const dummyData = [
-      { ID: 1, ItemName: "Maize Flour", Price: 120, CurrentStock: 50, LastUpdated: new Date() },
-      { ID: 2, ItemName: "Rice 1kg", Price: 200, CurrentStock: 30, LastUpdated: new Date() },
-      { ID: 3, ItemName: "Sugar 2kg", Price: 350, CurrentStock: 20, LastUpdated: new Date() }
-    ];
-    
-    const filtered = dummyData.filter(item => 
-      item.ItemName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    displayResults(filtered);
-    showMessage('Using offline data', 'warning');
-  }
-
-  // Initialize
-  console.log('Stock system initialized');
+  // Debug test
+  console.log('Script loaded successfully');
+  searchInput.value = "Maize"; // Pre-fill for testing
 });
