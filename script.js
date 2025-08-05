@@ -1,91 +1,100 @@
-// Mock data - REPLACE THIS WITH YOUR GOOGLE SHEETS API LATER
-const mockStock = [
-  { id: 1, name: "Maize Flour", price: 120, stock: 50 },
-  { id: 2, name: "Rice 1kg", price: 200, stock: 30 },
-  { id: 3, name: "Sugar 2kg", price: 350, stock: 20 }
-];
-
 document.addEventListener('DOMContentLoaded', () => {
+  // Dummy data - will replace with Google Sheets later
+  const stockData = [
+    { id: 1, name: "Maize Flour", price: 120, stock: 50 },
+    { id: 2, name: "Rice 1kg", price: 200, stock: 30 },
+    { id: 3, name: "Sugar 2kg", price: 350, stock: 20 }
+  ];
+
+  // DOM elements
+  const searchInput = document.getElementById('searchInput');
   const searchBtn = document.getElementById('searchBtn');
+  const stockResults = document.getElementById('stockResults');
+  const stockForm = document.getElementById('stockForm');
   const updateBtn = document.getElementById('updateBtn');
+
   let currentItem = null;
 
+  // Event listeners
   searchBtn.addEventListener('click', searchStock);
   updateBtn.addEventListener('click', updateStock);
+  searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') searchStock();
+  });
 
-  async function searchStock() {
-    const itemName = document.getElementById('searchItem').value.trim();
-    const resultsDiv = document.getElementById('stockResults');
+  function searchStock() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    stockResults.innerHTML = '';
     
-    if (!itemName) {
-      resultsDiv.innerHTML = '<p class="error">Please enter an item name</p>';
+    if (!searchTerm) {
+      showMessage('Please enter an item name', 'error');
       return;
     }
 
-    // SIMULATED SEARCH - REPLACE WITH REAL API CALL
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const foundItem = mockStock.find(item => 
-        item.name.toLowerCase().includes(itemName.toLowerCase())
+    // Simulate API call with timeout
+    setTimeout(() => {
+      const foundItems = stockData.filter(item => 
+        item.name.toLowerCase().includes(searchTerm)
       );
 
-      if (!foundItem) {
-        resultsDiv.innerHTML = '<p class="error">Item not found</p>';
-        document.getElementById('stockForm').style.display = 'none';
+      if (foundItems.length === 0) {
+        showMessage('No items found', 'error');
+        stockForm.style.display = 'none';
         return;
       }
 
-      currentItem = foundItem;
-      resultsDiv.innerHTML = `
-        <div class="stock-card">
-          <h3>${foundItem.name}</h3>
-          <p>Price: KSh ${foundItem.price}</p>
-          <p>Current Stock: <span class="stock-count">${foundItem.stock}</span></p>
-        </div>
-      `;
-      document.getElementById('stockForm').style.display = 'block';
-      
-      console.log('Found item:', foundItem); // Check browser console
-    } catch (error) {
-      console.error('Search failed:', error);
-      resultsDiv.innerHTML = `<p class="error">Search error: ${error.message}</p>`;
-    }
+      displayResults(foundItems);
+    }, 300); // Small delay to simulate network
+  }
+
+  function displayResults(items) {
+    stockResults.innerHTML = items.map(item => `
+      <div class="stock-card" data-id="${item.id}">
+        <h3>${item.name}</h3>
+        <p>Price: KSh ${item.price}</p>
+        <p>Stock: <span class="stock-value">${item.stock}</span> units</p>
+      </div>
+    `).join('');
+
+    // Add click handler to each result
+    document.querySelectorAll('.stock-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const itemId = parseInt(card.dataset.id);
+        currentItem = stockData.find(item => item.id === itemId);
+        stockForm.style.display = 'block';
+      });
+    });
   }
 
   function updateStock() {
     if (!currentItem) return;
     
-    const qtyInput = document.getElementById('adjustQty');
-    const qty = parseInt(qtyInput.value);
+    const quantity = parseInt(document.getElementById('adjustQty').value);
     const isAdd = document.getElementById('adjustType').value === 'add';
 
-    if (isNaN(qty) || qty <= 0) {
-      alert('Please enter a valid quantity');
+    if (isNaN(quantity) || quantity <= 0) {
+      showMessage('Please enter valid quantity', 'error');
       return;
     }
 
-    // Simulate update - REPLACE WITH REAL API CALL
-    try {
-      const newStock = isAdd ? 
-        currentItem.stock + qty : 
-        currentItem.stock - qty;
+    // Update stock
+    currentItem.stock = isAdd ? 
+      currentItem.stock + quantity : 
+      Math.max(0, currentItem.stock - quantity); // Prevent negative stock
 
-      if (newStock < 0) {
-        alert('Cannot reduce stock below 0');
-        return;
-      }
-
-      currentItem.stock = newStock;
-      document.querySelector('.stock-count').textContent = newStock;
-      qtyInput.value = '';
-      
-      console.log('Updated stock:', currentItem); // Check browser console
-      alert(`Stock updated successfully! New stock: ${newStock}`);
-    } catch (error) {
-      console.error('Update failed:', error);
-      alert('Failed to update stock');
-    }
+    // Update UI
+    document.querySelector('.stock-value').textContent = currentItem.stock;
+    showMessage(`Stock updated! New quantity: ${currentItem.stock}`, 'success');
   }
+
+  function showMessage(msg, type) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${type}`;
+    msgDiv.textContent = msg;
+    stockResults.prepend(msgDiv);
+    setTimeout(() => msgDiv.remove(), 3000);
+  }
+
+  // Debug confirmation
+  console.log('POS Stock System Initialized');
 });
