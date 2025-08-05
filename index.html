@@ -9,22 +9,23 @@
     <h1>Stock Dashboard</h1>
     
     <div class="search-box">
-      <input type="text" id="searchItem" placeholder="Search item...">
-      <button onclick="searchStock()">Search</button>
+      <input type="text" id="searchItem" placeholder="Search item..." autocomplete="off">
+      <button id="searchBtn">Search</button>
     </div>
     
     <div id="stockResults">
-      <!-- Results appear here -->
+      <!-- Results will appear here -->
+      <p class="placeholder">Search for an item to see stock levels</p>
     </div>
     
     <div class="stock-form" id="stockForm" style="display:none">
       <h3>Update Stock</h3>
-      <input type="number" id="adjustQty" placeholder="Quantity">
+      <input type="number" id="adjustQty" placeholder="Quantity" min="1">
       <select id="adjustType">
         <option value="add">Add Stock</option>
         <option value="reduce">Reduce Stock</option>
       </select>
-      <button onclick="updateStock()">Update</button>
+      <button id="updateBtn">Update</button>
     </div>
   </div>
 
