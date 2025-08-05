@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Stock Dashboard</h1>
+    
+    <div class="search-box">
+      <input type="text" id="searchItem" placeholder="Search item...">
+      <button onclick="searchStock()">Search</button>
+    </div>
+    
+    <div id="stockResults">
+      <!-- Results appear here -->
+    </div>
+    
+    <div class="stock-form" id="stockForm" style="display:none">
+      <h3>Update Stock</h3>
+      <input type="number" id="adjustQty" placeholder="Quantity">
+      <select id="adjustType">
+        <option value="add">Add Stock</option>
+        <option value="reduce">Reduce Stock</option>
+      </select>
+      <button onclick="updateStock()">Update</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
